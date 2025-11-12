@@ -48,6 +48,7 @@
 </p>
 
 ## Interleaved Vision-Text-Action Pretraining for General Robot Control
+> We sincerely apologize for the delay in releasing the data and model weights. As we’ve been focused on the paper DDL, progress has been slightly delayed. The optimized dataset and model release will follow right after—thank you for your patience.
 
 We introduce **EO-1** model, an open-source unified embodied foundation model comprising 3B parameters, trained on the carefully curated interleaved embodied dataset EO-Data1.5M, Web Multimodal Data, and Robot Control Data (AgiBotWorld, Open X-Embodiment, RoboMIND, SO100-Community, etc.). The **EO-1** model adopt a single unified decoder-only transformer that integrates discrete auto-regressive decoding with continuous flow matching denoising for multimodal embodied reasoning and robot control, enabling seamless perception, planning, reasoning, and acting in single model. This work highlights the following features:
 
