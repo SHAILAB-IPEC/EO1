@@ -19,7 +19,6 @@ from eo.model.modeling_qwen2_5_vl import Qwen2_5_VLForConditionalGeneration
 from eo.model.processing_eo1 import EO1VisionProcessor
 from eo.train.pipeline_config import TrainPipelineConfig
 from eo.train.train_utils import (
-    aggregate_dataset_length,
     configure_llm,
     configure_processor,
     configure_vision_tower,
@@ -116,7 +115,9 @@ def train():
         main_process_only=True,
     )
 
-    trainer = EO1VisionTrainer(model=model, processing_class=processor, args=training_args, **data_module)
+    trainer = EO1VisionTrainer(
+        model=model, processing_class=processor, args=training_args, **data_module
+    )
 
     # aggregate data lengths for packing
     if training_args.pack_dataset:
@@ -125,7 +126,7 @@ def train():
         dataset = data_module["train_dataset"].dataset
         lengths = None
         if trainer.accelerator.is_main_process:
-            lengths = aggregate_dataset_length(dataset)
+            lengths = dataset.lengths
         lengths = broadcast_object_list([lengths])[0]
         dataset.cached_lengths = lengths
 
@@ -135,7 +136,6 @@ def train():
         logger.info(
             f"group length {len(lengths)=}, {min(lengths)=}, {max(lengths)=},",
             f"packed data {len(packed_lens)=}, {min(packed_lens)=}, {max(packed_lens)=}, {np.mean(packed_lens)=}",
-            main_process_only=True,
         )
     else:
         dataset = data_module["train_dataset"]
@@ -154,7 +154,8 @@ def train():
     model.config.use_cache = True
     trainer.save_state()
     safe_save_model_for_hf_trainer(
-        trainer=trainer, output_dir=f"{training_args.output_dir}/checkpoint-final-{trainer.state.global_step}"
+        trainer=trainer,
+        output_dir=f"{training_args.output_dir}/checkpoint-final-{trainer.state.global_step}",
     )
 
 

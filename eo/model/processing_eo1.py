@@ -86,7 +86,7 @@ class EO1VisionProcessorKwargs(ProcessingKwargs, total=False):
 
 
 class EO1VisionProcessor(ProcessorMixin):
-    """EEO1Vision Processor for Image, Text, Video, and Robotic Action Processing"""
+    """EO1Vision Processor for Image, Text, Video, and Robotic Action Processing"""
 
     attributes = ["image_processor", "tokenizer", "video_processor"]
     valid_kwargs = ["chat_template"]
@@ -315,7 +315,7 @@ class EO1VisionProcessor(ProcessorMixin):
             select_action_keys = self.robot_config["select_action_keys"][repo_id]
             features = unnormalize_outputs.features
             cum_dims = [0] + np.cumsum([features[k].shape[0] for k in select_action_keys]).tolist()
-            origin_action = torch.tensor(actions[i], dtype=torch.float32)[..., : cum_dims[-1]]
+            origin_action = actions[i].to(torch.float32)[..., : cum_dims[-1]]
             batch = {
                 k: origin_action[..., cum_dims[m] : cum_dims[m + 1]] for m, k in enumerate(select_action_keys)
             }
@@ -340,7 +340,7 @@ class EO1VisionProcessor(ProcessorMixin):
             return_tensors="pt",
         ).to(model.device)
 
-        actions = model.sample_actions(**inputs)[0].cpu()
+        actions = model.sample_actions(**inputs).cpu()
         output_actions = self._process_robot_outputs(repo_ids, actions)
         return BatchFeature({"action": output_actions})
 

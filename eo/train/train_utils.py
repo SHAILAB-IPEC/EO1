@@ -76,18 +76,13 @@ def smart_tokenizer_and_embedding_resize(
 
     tokenizer = processor.tokenizer
     eo1_special_tokens = [
-        ACTION_START_TOKEN,
-        DEFAULT_ACTION_TOKEN,
-        PASS_ACTION_TOKEN,
-        ACTION_END_TOKEN,
-        STATE_START_TOKEN,
-        DEFAULT_STATE_TOKEN,
-        STATE_END_TOKEN,
-        TASK_VLA_TOKEN,
+        ACTION_START_TOKEN, DEFAULT_ACTION_TOKEN, ACTION_END_TOKEN,
+        STATE_START_TOKEN, DEFAULT_STATE_TOKEN, STATE_END_TOKEN,
+        TASK_VLA_TOKEN, PASS_ACTION_TOKEN
     ]
     num_new_tokens = tokenizer.add_tokens(eo1_special_tokens, special_tokens=True)
 
-    # NOTE: qwen2.5 vl vocab 151936 > tokenizer 151664 + 8, we don't need to resize embeddings
+    # NOTE: qwen2.5 vl vocab 151936 > [tokenizer 151664 + 8], we don't need to resize embeddings
     token_dict = {
         "state_token_id": DEFAULT_STATE_TOKEN,
         "action_token_start_id": ACTION_START_TOKEN,
@@ -142,47 +137,3 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
         cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
         del state_dict
         trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
-
-
-def aggregate_dataset_length(dataset):
-    """Aggregate the lengths of the dataset, used for dataset packing."""
-    import bisect
-
-    from torch.utils.data import DataLoader
-    from tqdm import tqdm
-
-    dataset.mm_dataset.sample_actions = False
-    total_data_len = len(dataset)
-    mm_dataset_len = len(dataset.mm_dataset)
-
-    num_workers = int(os.environ.get("DATASET_NUM_PROCESSES", 8))
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=num_workers, pin_memory=True)
-    data_iter = iter(dataloader)
-    logger.info(f"Using {num_workers} workers to aggregate lengths ...")
-
-    # get lerobot lengths
-    cumulative_sizes = dataset.lerobot_dataset.cumulative_sizes
-    lerobot_lengths = [len(dataset[mm_dataset_len + idx]["input_ids"]) for idx in [0] + cumulative_sizes[:-1]]
-    for i, (repo_id, length) in enumerate(
-        zip(dataset.lerobot_dataset.repo_ids, lerobot_lengths, strict=False)
-    ):
-        print(f"repo_id {repo_id}, avg len {length}, dataset len {len(dataset.lerobot_dataset._datasets[i])}")
-
-    lengths = []
-    for i in tqdm(range(total_data_len), desc="Aggregating lengths"):
-        if i < mm_dataset_len:
-            mm_data = dataset.mm_dataset[i]
-            len_i = mm_data.get("seq_length")
-            if len_i is None:
-                item = next(data_iter)
-                len_i = item["input_ids"].shape[-1]
-        else:
-            dataset_idx = bisect.bisect_right(cumulative_sizes, i - mm_dataset_len)
-            len_i = lerobot_lengths[dataset_idx]
-        lengths.append(len_i)
-
-    dataset.mm_dataset.sample_actions = True
-    dataset.cached_lengths = lengths
-    dataset.__setattr__("cached_lengths", lengths)
-    assert len(lengths) == total_data_len, f"Length mismatch: {len(lengths)} != {total_data_len}"
-    return lengths

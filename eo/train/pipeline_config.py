@@ -40,7 +40,7 @@ class TrainPipelineConfig(TrainingArguments):
     lerobot_data_video_backend: str | None = "torchcodec"
     state_mode: NormalizationMode | None = NormalizationMode.MEAN_STD
     pack_dataset: bool = False
-    max_packed_length: int = field(default=768, metadata={"help": "Maximum sequence length."})
+    max_packed_length: int = field(default=16384, metadata={"help": "Maximum sequence length."})
     mini_action_set_length: int = field(
         default=256, metadata={"help": "Maximum length of mini action set data in dataset packing."}
     )

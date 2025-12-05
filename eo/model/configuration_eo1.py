@@ -35,9 +35,9 @@ class EO1VisionFlowMatchingConfig(PretrainedConfig):
         num_denoise_steps=10,
         action_act="linear",
         num_action_layers=2,
-        state_token_id=151670,
+        state_token_id=151669,
         action_token_id=151666,
-        action_pass_id=151667,
+        action_pass_id=151672,
         **kwargs,
     ):
         if isinstance(vision_config, dict):

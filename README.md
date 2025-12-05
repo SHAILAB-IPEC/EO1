@@ -305,11 +305,12 @@ Robot Control Benchmark Results
 | Magma        | —         | 0.488               | 0.488               | 0.448               |
 | **EO-1**     | **0.982** | **0.765**           | **0.765**           | **0.727**           |
 
-## 📅 Roadmap
+## 📅 Update
 
 - [x] 🤖 Release [EO-1](https://huggingface.co/IPEC-COMMUNITY/EO-1-3B) pretraining, finetune scripts, and documentations.
 - [x] Integrate into [LERobot](https://github.com/huggingface/lerobot). We have merged the [PR](https://github.com/huggingface/lerobot/pull/1971) into the main branch. You can now use EO-1 with LERobot without any modifications.
-- [ ] 🤗 Release [pre-training models](https://huggingface.co/collections/IPEC-COMMUNITY/eo-robotics-68ac4ff30e1f746cac28ca14), Interleaved Dataset `EO-Data1.5M` and benchmark `EO-Bench`.
+- [x] 🤗 Release Interleaved Dataset [EO-Data1.5M](https://huggingface.co/datasets/IPEC-COMMUNITY/EO-Data1.5M) and benchmark [EO-Bench](https://huggingface.co/datasets/IPEC-COMMUNITY/EO-Bench). We also provide the Fintuned Model [eo1-qwen25_vl-fractal](https://huggingface.co/IPEC-COMMUNITY/eo1-qwen25_vl-fractal) and [eo1-qwen25_vl-bridge](https://huggingface.co/IPEC-COMMUNITY/eo1-qwen25_vl-bridge). NOTE: We have now updated our dataset to the [Parquet format](https://huggingface.co/datasets/IPEC-COMMUNITY/EO-Data1.5M). The meta_dataset has been deprecated — we no longer merge the LeRobot dataset with the multimodal dataset.
+- [ ] 🤗 Release [pre-training models](https://huggingface.co/collections/IPEC-COMMUNITY/eo-robotics-68ac4ff30e1f746cac28ca14) (undergoing).
 - [ ] ⚡️ Efficient LLM Inference over Long Sequences, Efficient KV-cache, etc.
 - [ ] 🤖 Integrate with human feedback fine-tuning.
 

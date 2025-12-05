@@ -99,6 +99,9 @@ class LeRobotDataset(BaseLeRobotDataset):
         # set delta action mode
         self.set_delta_action(delta_action, effector_indices)
 
+        # post prepare hf dataset
+        self.flatten_hf_dataset()
+
         # set nomalizer for multiple datasets
         self.set_normalization(state_mode)
 
@@ -161,8 +164,7 @@ class LeRobotDataset(BaseLeRobotDataset):
         cumulative_lengths = self.episode_data_index["to"]
         for k in self.select_action_keys:
             action = torch.stack(self.hf_dataset[k]).numpy()
-            if action.ndim == 1:
-                action = action[:, None]
+            action = action.reshape(action.shape[0], -1)  # (N, D)
             delta_action = np.diff(action, axis=0)
 
             delta_action = np.concatenate([delta_action, delta_action[-1:]], axis=0)
@@ -187,6 +189,25 @@ class LeRobotDataset(BaseLeRobotDataset):
             self.meta.stats[k]["max"] = delta_action.max(0)
             self.meta.stats[k]["mean"] = delta_action.mean(0)
             self.meta.stats[k]["std"] = delta_action.std(0)
+
+    def flatten_hf_dataset(self):
+        """flatten hf dataset for lerobot dataset"""
+        for k in self.select_action_keys + self.select_state_keys:
+            if self.meta.stats[k]["min"].ndim < 2:
+                continue
+
+            print(f"flattening {k} ...")
+            data = torch.stack(self.hf_dataset[k]).numpy()
+            data = data.reshape(data.shape[0], -1)  # (N, D)
+
+            # update hf dataset, only list with numpy is supported
+            self.hf_dataset = self.hf_dataset.remove_columns(k)
+            self.hf_dataset = self.hf_dataset.add_column(k, list(data))
+
+            self.meta.stats[k]["min"] = self.meta.stats[k]["min"].reshape(-1)
+            self.meta.stats[k]["max"] = self.meta.stats[k]["max"].reshape(-1)
+            self.meta.stats[k]["mean"] = self.meta.stats[k]["mean"].reshape(-1)
+            self.meta.stats[k]["std"] = self.meta.stats[k]["std"].reshape(-1)
 
     def set_normalization(self, state_mode: str = "MEAN_STD"):
         """set normalization mode for lerobot dataset"""
@@ -294,7 +315,7 @@ class LeRobotDataset(BaseLeRobotDataset):
                     sub_idx = min(sub_idx, len(self.task_sizes[ep_idx]) - 1)
                     task_text = self.meta.episodes[ep_idx]["action_config"][sub_idx]["action_text"]
 
-                    if self.train_subtask.startswith("mixture"):
+                    if str(self.train_subtask).startswith("mixture"):
                         global_text = self.meta.tasks[task_idx]
                         w = float(self.train_subtask.split(":")[-1])
                         # random select from [global_text, subtask_text]
@@ -346,7 +367,7 @@ class MultiLeRobotDataset(BaseMultiLeRobotDataset):
         self.disabled_features = set()
 
         # load lerobot datasets
-        num_processes = int(os.environ.get("DATASET_NUM_PROCESSES", 8))
+        num_processes = min(int(os.environ.get("DATASET_NUM_PROCESSES", 8)), len(data_configs))
         print(f"* load {len(data_configs)} lerobot datasets with {num_processes} processes ...")
         pool = multiprocessing.Pool(processes=num_processes)
         fn = partial(
